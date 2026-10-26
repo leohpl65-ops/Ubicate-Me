@@ -13,7 +13,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
@@ -35,6 +34,11 @@ import {
 } from '@workspace/api-client-react';
 import type { Connection, Invite } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
+import { useLocationService } from '@/hooks/useLocationService';
+import type {
+  LocationCoordinates,
+  LocationSubscription,
+} from '@/hooks/useLocationService';
 import SharedMap from '@/components/SharedMap';
 import type { SharedMapHandle } from '@/components/shared-map-types';
 
@@ -72,9 +76,9 @@ function LocationHome() {
   const [createdInvite, setCreatedInvite] = useState<Invite | null>(null);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [currentLocation, setCurrentLocation] =
-    useState<Location.LocationObjectCoords | null>(null);
+    useState<LocationCoordinates | null>(null);
   const [locationError, setLocationError] = useState('');
-  const [permission, requestPermission] = Location.useForegroundPermissions();
+  const { permission, requestPermission, watchPosition } = useLocationService();
 
   const saveProfile = useSaveMyProfile({
     mutation: {
@@ -117,9 +121,10 @@ function LocationHome() {
   const updateLocation = useUpdateLocation();
   const updateSharing = useUpdateSharing();
   const removeConnection = useRemoveConnection();
-  const locationSub = useRef<Location.LocationSubscription | null>(null);
+  const locationSub = useRef<LocationSubscription | null>(null);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     setAuthTokenGetter(() => getToken());
     return () => setAuthTokenGetter(null);
   }, [getToken]);
@@ -157,15 +162,8 @@ function LocationHome() {
 
     let active = true;
     setLocationError('');
-    void Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 10000,
-        distanceInterval: 15,
-      },
-      (position) => {
+    void watchPosition((coords) => {
         if (!active) return;
-        const coords = position.coords;
         setCurrentLocation(coords);
         updateLocation.mutate({
           data: {
@@ -174,8 +172,7 @@ function LocationHome() {
             accuracy: coords.accuracy,
           },
         });
-      },
-    )
+      })
       .then((subscription) => {
         if (active) locationSub.current = subscription;
         else subscription.remove();
@@ -187,7 +184,7 @@ function LocationHome() {
       locationSub.current?.remove();
       locationSub.current = null;
     };
-  }, [sharingEnabled, permission?.granted]);
+  }, [sharingEnabled, permission?.granted, watchPosition, updateLocation.mutate]);
 
   const askForSharing = useCallback(async () => {
     setLocationError('');
@@ -198,7 +195,9 @@ function LocationHome() {
         setLocationError(
           currentPermission.canAskAgain
             ? 'Necesitas permitir la ubicación mientras usas la app.'
-            : 'Permite la ubicación desde los ajustes del teléfono para compartirla.',
+            : Platform.OS === 'web'
+              ? 'Permite la ubicación en los ajustes de este navegador para compartirla.'
+              : 'Permite la ubicación desde los ajustes del teléfono para compartirla.',
         );
         return;
       }

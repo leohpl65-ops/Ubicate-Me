@@ -23,8 +23,12 @@ import { useQueryClient } from '@tanstack/react-query';
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
-const apiDomain = process.env.EXPO_PUBLIC_DOMAIN;
-if (apiDomain) setBaseUrl(`https://${apiDomain}`);
+const apiBaseUrl =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (process.env.EXPO_PUBLIC_DOMAIN
+    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+    : undefined);
+if (apiBaseUrl) setBaseUrl(apiBaseUrl);
 const clerkPublishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!clerkPublishableKey) {
   throw new Error('Falta configurar el inicio de sesión de Ubícame.');
