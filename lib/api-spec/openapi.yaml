@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: location
+    description: Account, pairing, and shared location operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,157 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /me:
+    get:
+      operationId: getMyProfile
+      tags: [location]
+      summary: Get the signed-in user's profile and sharing status
+      responses:
+        "200":
+          description: Account profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    put:
+      operationId: saveMyProfile
+      tags: [location]
+      summary: Save the signed-in user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: Saved profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /invites:
+    post:
+      operationId: createInvite
+      tags: [location]
+      summary: Create a short-lived five-digit pairing code
+      responses:
+        "201":
+          description: Invitation code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invite"
+  /invites/{code}:
+    get:
+      operationId: previewInvite
+      tags: [location]
+      summary: Preview the account that owns an invitation code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{5}$"
+      responses:
+        "200":
+          description: Invite owner preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitePreview"
+        "404":
+          description: Invite is invalid or expired
+  /invites/{code}/accept:
+    post:
+      operationId: acceptInvite
+      tags: [location]
+      summary: Accept an invitation and create mutual location sharing
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{5}$"
+      responses:
+        "201":
+          description: Paired account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        "404":
+          description: Invite is invalid or expired
+        "409":
+          description: Accounts are already paired or invite belongs to this account
+  /connections:
+    get:
+      operationId: getConnections
+      tags: [location]
+      summary: List paired accounts and their shared latest locations
+      responses:
+        "200":
+          description: Paired accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Connection"
+  /connections/{userId}:
+    delete:
+      operationId: removeConnection
+      tags: [location]
+      summary: End mutual location sharing with a paired account
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Connection removed
+        "404":
+          description: Connection not found
+  /location:
+    put:
+      operationId: updateLocation
+      tags: [location]
+      summary: Save the signed-in user's latest location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationInput"
+      responses:
+        "200":
+          description: Saved location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationStatus"
+  /sharing:
+    patch:
+      operationId: updateSharing
+      tags: [location]
+      summary: Turn location sharing on or off for paired accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharingInput"
+      responses:
+        "200":
+          description: Sharing status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharingStatus"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +186,93 @@ components:
           type: string
       required:
         - status
+    Profile:
+      type: object
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        sharingEnabled:
+          type: boolean
+      required: [userId, displayName, sharingEnabled]
+    ProfileInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: ["string", "null"]
+          maxLength: 320
+      required: [displayName]
+    Invite:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{5}$"
+        expiresAt:
+          type: string
+          format: date-time
+      required: [code, expiresAt]
+    InvitePreview:
+      type: object
+      properties:
+        displayName:
+          type: string
+      required: [displayName]
+    Connection:
+      type: object
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        locationUpdatedAt:
+          type: ["string", "null"]
+          format: date-time
+        sharingEnabled:
+          type: boolean
+      required:
+        [userId, displayName, latitude, longitude, locationUpdatedAt, sharingEnabled]
+    LocationInput:
+      type: object
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        accuracy:
+          type: ["number", "null"]
+          minimum: 0
+      required: [latitude, longitude]
+    LocationStatus:
+      type: object
+      properties:
+        updatedAt:
+          type: string
+          format: date-time
+      required: [updatedAt]
+    SharingInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required: [enabled]
+    SharingStatus:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+      required: [enabled]
 

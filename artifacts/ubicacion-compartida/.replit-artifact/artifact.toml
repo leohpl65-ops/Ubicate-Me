@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Ubicación compartida"
+description = "Aplicación móvil para que personas autorizadas compartan su ubicación en tiempo real de forma mutua, con inicio de sesión, códigos de invitación, confirmación explícita y mapa."
+version = "1.0.0"
+id = "artifacts/ubicacion-compartida"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 20760
+
+[services.development]
+run = "pnpm --filter @workspace/ubicacion-compartida run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ubicacion-compartida", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/ubicacion-compartida", "run", "serve" ]
+
+[services.env]
+PORT = "20760"
+BASE_PATH = "/"

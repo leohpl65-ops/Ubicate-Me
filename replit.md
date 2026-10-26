@@ -1,6 +1,6 @@
-# [Project name]
+# Ubícame
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Aplicación móvil para compartir ubicación voluntariamente entre personas que se vinculan por código y aceptan explícitamente.
 
 ## Run & Operate
 
