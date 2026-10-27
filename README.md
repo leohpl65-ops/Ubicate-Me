@@ -18,7 +18,7 @@ Este repositorio es un monorepo pnpm:
 2. La app crea o actualiza su perfil en la API.
 3. Para vincularse, una persona genera un código temporal de cinco dígitos; la otra lo revisa y confirma.
 4. La ubicación queda pausada hasta que su titular la activa y permite el acceso a la ubicación.
-5. Mientras compartir está activo, la app actualiza la ubicación y la API la entrega únicamente a las personas vinculadas.
+5. Mientras compartir está activo y la app puede obtener ubicación, la app actualiza la ubicación y la API la entrega únicamente a las personas vinculadas. El seguimiento actual es en primer plano; cerrar o suspender la app o perder conexión también puede detener las actualizaciones.
 6. En web, el navegador solicita el permiso de ubicación y el mapa de OpenStreetMap muestra la ubicación seleccionada. En móvil, se usa el mapa nativo con teselas de OpenStreetMap. El mapa web solicita teselas del área aproximada; las coordenadas exactas se mantienen en la página.
 
 ## Ejecutar en Replit
@@ -83,6 +83,7 @@ Agrega una entrada numerada al final de esta lista cada vez que se haga un arreg
 - **modificación (3):** Se preparó la exportación estática web con Expo Router y un comando de compilación independiente, sin cambiar el flujo de compilación móvil.
 - **modificación (4):** Se separó la URL de la API para web y móvil y se evitó enviar el token Bearer móvil desde el navegador, que usa las cookies de sesión.
 - **modificación (5):** Se documentaron la estructura, los servicios, los comandos de ejecución y las limitaciones actuales de Vercel.
+- **modificación (6):** Se muestra la última hora de ubicación y, tras dos minutos sin actualizaciones, un aviso de posible apagado; el sistema no puede distinguirlo de una app suspendida o falta de señal.
 
 ## Historial de versiones
 

@@ -516,13 +516,19 @@ function LocationHome() {
                     {person.displayName}
                   </Text>
                   <Text
-                    numberOfLines={1}
+                    numberOfLines={2}
                     style={[styles.personStatus, { color: colors.mutedForeground }]}
                   >
-                    {person.latitude != null
-                      ? locationAge(person.locationUpdatedAt)
-                      : 'Ubicación pausada'}
+                    {connectionStatus(person)}
                   </Text>
+                  {person.locationUpdatedAt ? (
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.personLastSeen, { color: colors.mutedForeground }]}
+                    >
+                      Última vez: {formatLastSeen(person.locationUpdatedAt)}
+                    </Text>
+                  ) : null}
                 </View>
               </Pressable>
             ))}
@@ -836,17 +842,22 @@ function LocationHome() {
   );
 }
 
-function locationAge(timestamp: string | Date | null | undefined): string {
-  if (!timestamp) return 'Sin ubicación reciente';
-  const ageMinutes = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(timestamp).getTime()) / 60_000),
-  );
-  if (ageMinutes < 1) return 'Ahora mismo';
-  if (ageMinutes < 60) return `Hace ${ageMinutes} min`;
-  const ageHours = Math.floor(ageMinutes / 60);
-  if (ageHours < 24) return `Hace ${ageHours} h`;
-  return 'Última ubicación';
+function connectionStatus(person: Connection): string {
+  if (!person.sharingEnabled) return 'Ubicación pausada';
+  if (!person.locationUpdatedAt) return 'Esperando ubicación';
+
+  const ageMs = Date.now() - new Date(person.locationUpdatedAt).getTime();
+  if (ageMs >= 2 * 60_000) return 'Sin actualizar · posible apagado';
+  return 'Compartiendo ubicación';
+}
+
+function formatLastSeen(timestamp: string | Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(timestamp));
 }
 
 const styles = StyleSheet.create({
@@ -1001,7 +1012,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: 188,
-    minHeight: 65,
+    minHeight: 72,
     paddingHorizontal: 10,
     borderRadius: 17,
     borderWidth: 1,
@@ -1018,6 +1029,7 @@ const styles = StyleSheet.create({
   personTextGroup: { flex: 1 },
   personName: { fontSize: 13, fontWeight: '600' },
   personStatus: { marginTop: 3, fontSize: 11 },
+  personLastSeen: { marginTop: 2, fontSize: 10 },
   noPeopleText: { marginTop: 10, fontSize: 13, lineHeight: 19 },
   inlineError: { marginTop: 9 },
   errorText: { color: '#b54235', fontSize: 12, lineHeight: 18 },
