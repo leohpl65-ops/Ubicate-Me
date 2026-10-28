@@ -134,7 +134,7 @@ function LocationHome() {
     syncedUserId.current = user.id;
     const email = user.primaryEmailAddress?.emailAddress ?? null;
     const displayName =
-      user.fullName || user.username || email?.split('@')[0] || 'Mi cuenta';
+      user.firstName?.trim() || user.fullName?.trim() || 'Mi cuenta';
     saveProfile.mutate({ data: { displayName, email } });
   }, [userLoaded, user, saveProfile]);
 
@@ -342,7 +342,8 @@ function LocationHome() {
     return <LoadingScreen />;
   }
 
-  const profileName = user.fullName || user.username || 'Mi cuenta';
+  const profileName =
+    user.firstName?.trim() || user.fullName?.trim() || 'Mi cuenta';
   const usableCoords = connections.filter(
     (person) => person.latitude != null && person.longitude != null,
   );
